@@ -1,0 +1,119 @@
+import pygame
+import random
+import sys
+
+# Initialize Pygame
+pygame.init()
+
+# Set up display
+WIDTH, HEIGHT = 800, 600
+win = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Ping Pong Game")
+
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+
+# Paddle properties
+PADDLE_WIDTH, PADDLE_HEIGHT = 10, 100
+PLAYER_VEL = 7
+AI_VEL = 5
+
+# Ball properties
+BALL_RADIUS = 7
+BALL_VEL_X, BALL_VEL_Y = 5, 5
+
+# Create paddles
+player = pygame.Rect(10, HEIGHT//2 - PADDLE_HEIGHT//2, PADDLE_WIDTH, PADDLE_HEIGHT)
+ai = pygame.Rect(WIDTH - 20, HEIGHT//2 - PADDLE_HEIGHT//2, PADDLE_WIDTH, PADDLE_HEIGHT)
+
+# Create ball
+ball = pygame.Rect(WIDTH//2, HEIGHT//2, BALL_RADIUS*2, BALL_RADIUS*2)
+
+# Score
+player_score = 0
+ai_score = 0
+
+# Font
+font = pygame.font.SysFont('Arial', 30)
+
+def draw():
+    win.fill(BLACK)
+    
+    # Draw paddles
+    pygame.draw.rect(win, WHITE, player)
+    pygame.draw.rect(win, WHITE, ai)
+    
+    # Draw ball
+    pygame.draw.ellipse(win, WHITE, ball)
+    
+    # Draw middle line
+    pygame.draw.aaline(win, WHITE, (WIDTH//2, 0), (WIDTH//2, HEIGHT))
+    
+    # Draw scores
+    player_text = font.render(f"{player_score}", False, WHITE)
+    ai_text = font.render(f"{ai_score}", False, WHITE)
+    win.blit(player_text, (WIDTH//4, 20))
+    win.blit(ai_text, (3*WIDTH//4, 20))
+    
+    pygame.display.flip()
+
+def move_ball():
+    global BALL_VEL_X, BALL_VEL_Y, player_score, ai_score
+    
+    ball.x += BALL_VEL_X
+    ball.y += BALL_VEL_Y
+    
+    # Ball collision with top or bottom
+    if ball.top <= 0 or ball.bottom >= HEIGHT:
+        BALL_VEL_Y *= -1
+    
+    # Ball collision with paddles
+    if ball.colliderect(player) or ball.colliderect(ai):
+        BALL_VEL_X *= -1
+    
+    # Ball out of bounds
+    if ball.left <= 0:
+        ai_score += 1
+        reset_ball()
+    elif ball.right >= WIDTH:
+        player_score += 1
+        reset_ball()
+
+def reset_ball():
+    global BALL_VEL_X, BALL_VEL_Y
+    ball.center = (WIDTH//2, HEIGHT//2)
+    BALL_VEL_X *= random.choice((1, -1))
+    BALL_VEL_Y *= random.choice((1, -1))
+
+def move_player():
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_w] and player.top > 0:
+        player.y -= PLAYER_VEL
+    if keys[pygame.K_s] and player.bottom < HEIGHT:
+        player.y += PLAYER_VEL
+
+def move_ai():
+    if ai.top < ball.y:
+        ai.y += AI_VEL
+    if ai.bottom > ball.y:
+        ai.y -= AI_VEL
+
+def main():
+    clock = pygame.time.Clock()
+    
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+        
+        move_ball()
+        move_player()
+        move_ai()
+        
+        draw()
+        clock.tick(60)
+
+if __name__ == "__main__":
+    main()
